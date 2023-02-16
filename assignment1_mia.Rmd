@@ -1,0 +1,124 @@
+---
+title: "assignment1_mia"
+output: html_document
+date: "2023-02-16"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+# load packages
+pacman::p_load(tidyverse)
+```
+
+```{r}
+# setup 
+trials <- 120
+num_agents <- 100
+rate <- 0.5
+noise <- 0.2
+
+
+```
+
+```{r}
+# random agent with noise
+RandomAgentNoise_f <- function(rate, noise) {
+  choice <- rbinom(1, 1, rate)
+  if (rbinom(1, 1, noise) == 1) 
+  {choice = rbinom(1, 1, 0.5)}
+  return(choice)
+  }
+
+```
+
+```{r}
+# WSLS
+
+```
+
+```{r}
+# LSWS - with noise 
+LSWSAgentNoise_f <- function(prevChoice, Feedback, noise){ 
+  if (Feedback == 1){
+    choice = 1-prevChoice} 
+  else if (Feedback == 0) {
+    choice = prevChoice 
+    }
+  if (rbinom(1,1,noise)==1){
+    choice <- rbinom(1,1,.5)
+    }
+  return(choice) 
+  }
+
+```
+
+```{r}
+# LSWS - 2 time lose shift 
+LSWSAgent2Lose_f <- function(prevChoice, Feedback, Feedback_oneback, noise){ 
+  # if you lose twice, shift instead of stay
+  if (Feedback_oneback == 0 & Feedback == 0){
+    choice = 1-prevChoice
+  }
+  # if you win, shift
+  else if (Feedback == 1){
+    choice = 1-prevChoice}
+  # if you lose, stay 
+  else if (Feedback_oneback == 1 & Feedback == 0) {
+    choice = prevChoice 
+  }
+  # sometimes be random 
+  if (rbinom(1,1,noise)==1){
+    choice <- rbinom(1,1,.5)
+    }
+  return(choice) 
+  }
+
+```
+
+
+```{r}
+# playing the game
+Self <- rep(NA, trials) 
+Other <- rep(NA, trials) 
+Feedback <- rep(NA, trials)
+Self[1] <- rbinom(1, 1, 0.5)
+Other[1] <- rbinom(1, 1, 0.5)
+Feedback[1] <- as.numeric(Self[1] == Other[1])
+
+for (i in 2:trials){ 
+  if (Self[i-1] == Other[i-1]){ 
+    Feedback[i] = 1 } 
+  else {
+    Feedback[i] = 0 } 
+  Self[i] <- LSWSAgent2Lose_f(Self[i-1], Feedback[i], Feedback[i-1], noise ) 
+  Other[i] <- RandomAgentNoise_f(rate = rate, noise = noise) 
+  }
+
+
+```
+
+```{r}
+df <- tibble(Self, Other, trial = seq(trials), Feedback = as.numeric(Self==Other)) 
+
+ggplot(df) + 
+  theme_classic() + 
+  geom_line(aes(trial, Self), color = "red") + 
+  geom_line(aes(trial, Other), color = "blue")
+
+
+ggplot(df)+
+  geom_bar(aes(as.factor(Feedback), fill = as.factor(Feedback)))+
+  theme_minimal()
+```
+
+```{r}
+
+
+
+df <- tibble(agent_nr, rate, noise, Self, Other)
+```
+
